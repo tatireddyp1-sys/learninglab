@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 120">
+  <rect width="100%" height="100%" fill="#071233" rx="8" />
+  <g fill="#ffd166">
+    <circle cx="40" cy="50" r="4" />
+    <circle cx="70" cy="30" r="3.5" />
+    <circle cx="100" cy="60" r="4" />
+    <circle cx="140" cy="40" r="3" />
+  </g>
+  <g stroke="#60a5fa" stroke-width="1.2" fill="none">
+    <path d="M40 50 L70 30 L100 60 L140 40" />
+  </g>
+  <text x="12" y="110" fill="#94a3b8" font-size="10">Map the Stars</text>
+</svg>

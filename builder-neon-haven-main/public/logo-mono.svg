@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
+  <rect width="120" height="120" rx="20" fill="#111827" />
+  <g transform="translate(24 24)" stroke="#FFFFFF" stroke-width="2" fill="none">
+    <circle cx="36" cy="36" r="22" />
+    <ellipse cx="36" cy="36" rx="34" ry="20" transform="rotate(-18 36 36)" />
+    <path d="M52 28c-6-8-18-10-28-6-6 2-10 6-12 12" stroke-linecap="round" stroke-linejoin="round" />
+  </g>
+</svg>
