@@ -4,7 +4,7 @@ import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { AlertCircle, Copy, Check } from "lucide-react";
+import { AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import MFAScreen from "@/components/auth/MFAScreen";
 
@@ -17,19 +17,6 @@ export default function Login() {
   const [showMFA, setShowMFA] = useState(false);
   const [mfaError, setMfaError] = useState("");
   const [isMFALoading, setIsMFALoading] = useState(false);
-  const [copiedId, setCopiedId] = useState<string | null>(null);
-
-  const demoCredentials = [
-    { id: "admin", email: "admin@demo.com", password: "admin123", role: "Admin" },
-    { id: "teacher", email: "teacher@demo.com", password: "teacher123", role: "Teacher" },
-    { id: "student", email: "student@demo.com", password: "student123", role: "Student" },
-  ];
-
-  const handleCopy = (text: string, id: string) => {
-    navigator.clipboard.writeText(text);
-    setCopiedId(id);
-    setTimeout(() => setCopiedId(null), 2000);
-  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -167,59 +154,6 @@ export default function Login() {
           </form>
         </CardContent>
       </Card>
-
-      {/* Demo Credentials */}
-      <div className="w-full max-w-md mt-6 space-y-3">
-        <div className="text-center text-sm text-white/70 mb-3">
-          <p className="font-semibold text-white mb-2">Demo Credentials</p>
-          <p className="text-xs">Click to copy credentials (MFA code: <span className="font-mono bg-primary/20 px-2 py-1 rounded">123456</span>)</p>
-        </div>
-        <div className="space-y-2">
-          {demoCredentials.map((cred) => (
-            <div key={cred.id} className="bg-card border border-primary/20 rounded-lg p-3 space-y-2">
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs text-white/60">Email</p>
-                  <p className="text-sm font-mono text-white truncate">{cred.email}</p>
-                </div>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleCopy(cred.email, `${cred.id}-email`)}
-                  className="shrink-0"
-                >
-                  {copiedId === `${cred.id}-email` ? (
-                    <Check className="h-4 w-4 text-green-500" />
-                  ) : (
-                    <Copy className="h-4 w-4" />
-                  )}
-                </Button>
-              </div>
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs text-white/60">Password</p>
-                  <p className="text-sm font-mono text-white truncate">{cred.password}</p>
-                </div>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleCopy(cred.password, `${cred.id}-password`)}
-                  className="shrink-0"
-                >
-                  {copiedId === `${cred.id}-password` ? (
-                    <Check className="h-4 w-4 text-green-500" />
-                  ) : (
-                    <Copy className="h-4 w-4" />
-                  )}
-                </Button>
-              </div>
-              <div className="text-xs text-primary">Role: {cred.role}</div>
-            </div>
-          ))}
-        </div>
-      </div>
     </div>
   );
 }

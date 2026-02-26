@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { DEMO_CREDENTIALS } from "@/lib/demoCredentials";
 
 export type UserRole = "admin" | "teacher" | "student";
 
@@ -53,35 +54,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     // Initialize demo users if none exist
     const existingUsers = localStorage.getItem("auth_users");
     if (!existingUsers || JSON.parse(existingUsers).length === 0) {
-      const demoUsers: StoredUser[] = [
-        {
-          id: "admin-1",
-          email: "admin@demo.com",
-          password: "admin123",
-          name: "Admin User",
-          role: "admin",
-          isActive: true,
-          createdAt: new Date().toISOString(),
-        },
-        {
-          id: "teacher-1",
-          email: "teacher@demo.com",
-          password: "teacher123",
-          name: "John Teacher",
-          role: "teacher",
-          isActive: true,
-          createdAt: new Date().toISOString(),
-        },
-        {
-          id: "student-1",
-          email: "student@demo.com",
-          password: "student123",
-          name: "Sarah Student",
-          role: "student",
-          isActive: true,
-          createdAt: new Date().toISOString(),
-        },
-      ];
+      const demoUsers: StoredUser[] = Object.entries(DEMO_CREDENTIALS).map(([key, cred]) => ({
+        id: `${key}-1`,
+        email: cred.email,
+        password: cred.password,
+        name: cred.name,
+        role: cred.role,
+        isActive: true,
+        createdAt: new Date().toISOString(),
+      }));
       localStorage.setItem("auth_users", JSON.stringify(demoUsers));
     }
 
