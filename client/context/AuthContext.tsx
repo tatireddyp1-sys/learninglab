@@ -15,6 +15,17 @@ export interface StoredUser extends User {
   password: string;
 }
 
+export interface AuditLog {
+  id: string;
+  adminId: string;
+  adminName: string;
+  action: string;
+  targetUserId?: string;
+  targetUserName?: string;
+  details: Record<string, any>;
+  timestamp: string;
+}
+
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
@@ -27,6 +38,8 @@ interface AuthContextType {
   createUser: (email: string, password: string, name: string, role: UserRole) => Promise<void>;
   updateUser: (userId: string, updates: Partial<User>) => Promise<void>;
   deleteUser: (userId: string) => Promise<void>;
+  getAuditLogs: () => AuditLog[];
+  logAction: (action: string, targetUserId?: string, details?: Record<string, any>) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -112,6 +125,40 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return roleArray.includes(user.role);
   };
 
+  const logAction = (action: string, targetUserId?: string, details: Record<string, any> = {}) => {
+    if (!user) return;
+
+    const logs = JSON.parse(localStorage.getItem("audit_logs") || "[]") as AuditLog[];
+    const targetUser = targetUserId
+      ? (JSON.parse(localStorage.getItem("auth_users") || "[]") as StoredUser[]).find(
+          (u) => u.id === targetUserId
+        )
+      : undefined;
+
+    const auditLog: AuditLog = {
+      id: Date.now().toString(),
+      adminId: user.id,
+      adminName: user.name,
+      action,
+      targetUserId,
+      targetUserName: targetUser?.name,
+      details,
+      timestamp: new Date().toISOString(),
+    };
+
+    logs.push(auditLog);
+    localStorage.setItem("audit_logs", JSON.stringify(logs));
+  };
+
+  const getAuditLogs = (): AuditLog[] => {
+    try {
+      const logs = JSON.parse(localStorage.getItem("audit_logs") || "[]") as AuditLog[];
+      return logs.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+    } catch {
+      return [];
+    }
+  };
+
   const getAllUsers = (): User[] => {
     const users = JSON.parse(localStorage.getItem("auth_users") || "[]") as StoredUser[];
     return users.map(({ password, ...userWithoutPassword }) => userWithoutPassword);
@@ -139,6 +186,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     users.push(newUser);
     localStorage.setItem("auth_users", JSON.stringify(users));
+
+    // Log the creation
+    logAction("create_user", newUser.id, { email, name, role });
   };
 
   const updateUser = async (userId: string, updates: Partial<User>) => {
@@ -162,6 +212,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setUser(updatedUser);
       localStorage.setItem("auth_user", JSON.stringify(updatedUser));
     }
+
+    // Log the update
+    logAction("update_user", userId, updates);
   };
 
   const deleteUser = async (userId: string) => {
@@ -170,8 +223,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
 
     const users = JSON.parse(localStorage.getItem("auth_users") || "[]") as StoredUser[];
+    const userToDelete = users.find((u: any) => u.id === userId);
     const filteredUsers = users.filter((u: any) => u.id !== userId);
     localStorage.setItem("auth_users", JSON.stringify(filteredUsers));
+
+    // Log the deletion
+    logAction("delete_user", userId, { userName: userToDelete?.name });
   };
 
   return (
@@ -188,6 +245,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         createUser,
         updateUser,
         deleteUser,
+        getAuditLogs,
+        logAction,
       }}
     >
       {children}

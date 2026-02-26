@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import Logo from "@/components/ui/Logo";
 import { useAuth } from "@/context/AuthContext";
 import { LogOut, User } from "lucide-react";
+import RoleBadge from "@/components/ui/RoleBadge";
 
 const navLinkClass = ({ isActive }: { isActive: boolean }) =>
   cn(
@@ -37,9 +38,26 @@ export default function Header() {
           <NavLink to="/lessons" className={navLinkClass}>
             Lessons
           </NavLink>
-          <NavLink to="/contribute" className={navLinkClass}>
-            Contribute
-          </NavLink>
+          {user?.role === "student" && (
+            <NavLink to="/contribute" className={navLinkClass}>
+              Contribute
+            </NavLink>
+          )}
+          {user?.role === "teacher" && (
+            <NavLink to="/lessons/upload" className={navLinkClass}>
+              My Lessons
+            </NavLink>
+          )}
+          {user?.role === "admin" && (
+            <>
+              <NavLink to="/admin/users" className={navLinkClass}>
+                Users
+              </NavLink>
+              <NavLink to="/admin/audit-logs" className={navLinkClass}>
+                Audit Logs
+              </NavLink>
+            </>
+          )}
         </nav>
         <div className="flex items-center gap-2">
           <Button asChild variant="secondary" className="hidden sm:inline-flex">
@@ -47,9 +65,10 @@ export default function Header() {
           </Button>
           {user && (
             <div className="hidden sm:flex items-center gap-2">
-              <span className="text-sm text-muted-foreground flex items-center gap-1">
+              <span className="text-sm text-muted-foreground flex items-center gap-2">
                 <User className="h-4 w-4" />
                 {user.name}
+                <RoleBadge role={user.role} size="sm" />
               </span>
               <Button variant="ghost" size="sm" onClick={handleLogout} className="gap-1">
                 <LogOut className="h-4 w-4" />

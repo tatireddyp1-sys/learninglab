@@ -9,9 +9,12 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Search, BookMarked } from "lucide-react";
+import { Search, BookMarked, Trash2, Edit2, CheckCircle } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import SAMPLE_LESSONS from "@/lib/sample-lessons";
+import { useAuth } from "@/context/AuthContext";
+import { useProgress } from "@/context/ProgressContext";
+import { Progress } from "@/components/ui/progress";
 
 type GradeBand = "K-2" | "3-5" | "6-8" | "9-12";
 
@@ -40,6 +43,8 @@ function loadCustomLessons(): Lesson[] {
 
 export default function Lessons() {
   const navigate = useNavigate();
+  const { user, hasRole } = useAuth();
+  const { getProgress } = useProgress();
   const [query, setQuery] = useState("");
   const [band, setBand] = useState<GradeBand | "all">("all");
   const [format, setFormat] = useState<"all" | "Unplugged" | "Hybrid">("all");
@@ -154,38 +159,74 @@ export default function Lessons() {
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
-          {results.map((l) => (
-            <Card
-              key={l.id}
-              className="hover:shadow-md transition-shadow cursor-pointer"
-              onClick={() => navigate("/viewer")}
-            >
-              <CardHeader>
-                <CardTitle className="flex items-center justify-between gap-2">
-                  {l.title}
-                  <Badge
-                    className="shrink-0"
-                    variant={l.format === "Hybrid" ? "default" : "secondary"}
-                  >
-                    {l.format}
-                  </Badge>
-                </CardTitle>
-                <CardDescription>{l.summary}</CardDescription>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <div className="flex flex-wrap gap-2">
-                  {l.tags?.map((t) => (
-                    <Badge key={t} variant="outline">
-                      {t}
+          {results.map((l) => {
+            const progress = user ? getProgress(user.id, l.id) : null;
+            return (
+              <Card
+                key={l.id}
+                className="hover:shadow-md transition-shadow cursor-pointer flex flex-col"
+                onClick={() => navigate("/viewer")}
+              >
+                <CardHeader>
+                  <CardTitle className="flex items-center justify-between gap-2">
+                    {l.title}
+                    <Badge
+                      className="shrink-0"
+                      variant={l.format === "Hybrid" ? "default" : "secondary"}
+                    >
+                      {l.format}
                     </Badge>
-                  ))}
-                </div>
-                <div className="mt-3 text-xs text-muted-foreground">
-                  Grades: {l.gradeBands?.join(", ")} • {l.duration}
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                  </CardTitle>
+                  <CardDescription>{l.summary}</CardDescription>
+                </CardHeader>
+                <CardContent className="pt-0 flex-1 flex flex-col justify-between">
+                  <div>
+                    <div className="flex flex-wrap gap-2">
+                      {l.tags?.map((t) => (
+                        <Badge key={t} variant="outline">
+                          {t}
+                        </Badge>
+                      ))}
+                    </div>
+                    <div className="mt-3 text-xs text-muted-foreground">
+                      Grades: {l.gradeBands?.join(", ")} • {l.duration}
+                    </div>
+                  </div>
+
+                  {/* Progress tracking for students */}
+                  {hasRole("student") && progress && (
+                    <div className="mt-4 space-y-2">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-xs font-medium text-white/70">Progress</span>
+                        <span className="text-xs text-white/50">{progress.progress}%</span>
+                      </div>
+                      <Progress value={progress.progress} className="h-2" />
+                      {progress.completed && (
+                        <div className="flex items-center gap-1 text-xs text-green-600">
+                          <CheckCircle className="h-3 w-3" />
+                          Completed
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Teacher actions */}
+                  {hasRole(["teacher", "admin"]) && (
+                    <div className="mt-4 flex gap-2 pt-4 border-t border-primary/10" onClick={(e) => e.stopPropagation()}>
+                      <Button variant="outline" size="sm" className="flex-1">
+                        <Edit2 className="h-3 w-3 mr-1" />
+                        Edit
+                      </Button>
+                      <Button variant="outline" size="sm" className="flex-1 text-red-600 hover:text-red-700">
+                        <Trash2 className="h-3 w-3 mr-1" />
+                        Delete
+                      </Button>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })}
 
           {results.length === 0 && (
             <div className="col-span-full text-center rounded-lg border p-8 bg-card text-muted-foreground">
