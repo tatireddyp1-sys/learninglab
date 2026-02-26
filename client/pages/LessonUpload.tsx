@@ -4,13 +4,14 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle, Upload, FileText, Trash2 } from "lucide-react";
+import { AlertCircle, Upload, FileText, Trash2, Edit2, Save, X } from "lucide-react";
 
 interface LessonFile {
   id: string;
   name: string;
   title: string;
   uploadedAt: string;
+  updatedAt?: string;
 }
 
 export default function LessonUpload() {
@@ -21,6 +22,8 @@ export default function LessonUpload() {
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState("");
   const [formData, setFormData] = useState({ title: "", file: null as File | null });
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editTitle, setEditTitle] = useState("");
 
   // If not teacher, show access denied
   if (!hasRole(["teacher", "admin"])) {
@@ -87,6 +90,33 @@ export default function LessonUpload() {
     const updatedLessons = lessons.filter((l) => l.id !== lessonId);
     setLessons(updatedLessons);
     localStorage.setItem(`teacher_lessons_${user?.id}`, JSON.stringify(updatedLessons));
+  };
+
+  const startEditing = (lesson: LessonFile) => {
+    setEditingId(lesson.id);
+    setEditTitle(lesson.title);
+  };
+
+  const saveEdit = (lessonId: string) => {
+    if (!editTitle.trim()) {
+      setError("Lesson title cannot be empty");
+      return;
+    }
+
+    const updatedLessons = lessons.map((l) =>
+      l.id === lessonId
+        ? { ...l, title: editTitle, updatedAt: new Date().toISOString() }
+        : l
+    );
+    setLessons(updatedLessons);
+    localStorage.setItem(`teacher_lessons_${user?.id}`, JSON.stringify(updatedLessons));
+    setEditingId(null);
+    setError("");
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+    setEditTitle("");
   };
 
   return (
@@ -171,26 +201,70 @@ export default function LessonUpload() {
             <div className="grid gap-4">
               {lessons.map((lesson) => (
                 <Card key={lesson.id} className="overflow-hidden">
-                  <CardContent className="p-6 flex items-start justify-between">
+                  <CardContent className="p-6 flex items-start justify-between gap-4">
                     <div className="flex items-start gap-4 flex-1">
-                      <div className="bg-primary/10 rounded-lg p-3 mt-1">
+                      <div className="bg-primary/10 rounded-lg p-3 mt-1 shrink-0">
                         <FileText className="w-6 h-6 text-primary" />
                       </div>
-                      <div className="flex-1">
-                        <h3 className="font-semibold text-white">{lesson.title}</h3>
-                        <p className="text-xs text-white/60 mt-1">{lesson.name}</p>
-                        <p className="text-xs text-white/50 mt-2">
-                          Uploaded {new Date(lesson.uploadedAt).toLocaleDateString()}
-                        </p>
+                      <div className="flex-1 min-w-0">
+                        {editingId === lesson.id ? (
+                          <div className="space-y-2">
+                            <Input
+                              value={editTitle}
+                              onChange={(e) => setEditTitle(e.target.value)}
+                              className="text-white"
+                            />
+                            <div className="flex gap-2">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => saveEdit(lesson.id)}
+                                className="flex-1"
+                              >
+                                <Save className="w-4 h-4 mr-1" />
+                                Save
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={cancelEdit}
+                                className="flex-1"
+                              >
+                                <X className="w-4 h-4 mr-1" />
+                                Cancel
+                              </Button>
+                            </div>
+                          </div>
+                        ) : (
+                          <>
+                            <h3 className="font-semibold text-white">{lesson.title}</h3>
+                            <p className="text-xs text-white/60 mt-1">{lesson.name}</p>
+                            <p className="text-xs text-white/50 mt-2">
+                              Uploaded {new Date(lesson.uploadedAt).toLocaleDateString()}
+                              {lesson.updatedAt && ` • Updated ${new Date(lesson.updatedAt).toLocaleDateString()}`}
+                            </p>
+                          </>
+                        )}
                       </div>
                     </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleDelete(lesson.id)}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
+                    {editingId !== lesson.id && (
+                      <div className="flex gap-2 shrink-0">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => startEditing(lesson)}
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDelete(lesson.id)}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               ))}
