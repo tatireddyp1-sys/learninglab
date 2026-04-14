@@ -5,16 +5,36 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, X } from "lucide-react";
 import { UserRole } from "@/context/AuthContext";
+import type { CustomRole } from "@shared/lms";
 
 interface CreateUserModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onCreateUser: (email: string, password: string, name: string, role: UserRole) => Promise<void>;
+  onCreateUser: (
+    email: string,
+    password: string,
+    name: string,
+    role: UserRole,
+    customRoleId?: string | null
+  ) => Promise<void>;
+  customRoles: CustomRole[];
   isLoading?: boolean;
 }
 
-export default function CreateUserModal({ isOpen, onClose, onCreateUser, isLoading = false }: CreateUserModalProps) {
-  const [formData, setFormData] = useState({ name: "", email: "", password: "", role: "student" as UserRole });
+export default function CreateUserModal({
+  isOpen,
+  onClose,
+  onCreateUser,
+  customRoles,
+  isLoading = false,
+}: CreateUserModalProps) {
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    password: "",
+    role: "student" as UserRole,
+    customRoleId: "",
+  });
   const [error, setError] = useState("");
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -52,8 +72,9 @@ export default function CreateUserModal({ isOpen, onClose, onCreateUser, isLoadi
     if (!validateForm()) return;
 
     try {
-      await onCreateUser(formData.email, formData.password, formData.name, formData.role);
-      setFormData({ name: "", email: "", password: "", role: "student" });
+      const cr = formData.customRoleId.trim() || null;
+      await onCreateUser(formData.email, formData.password, formData.name, formData.role, cr);
+      setFormData({ name: "", email: "", password: "", role: "student", customRoleId: "" });
       setError("");
       onClose();
     } catch (err) {
@@ -134,7 +155,7 @@ export default function CreateUserModal({ isOpen, onClose, onCreateUser, isLoadi
 
             <div className="space-y-2">
               <label htmlFor="role" className="text-sm font-medium text-white">
-                Role
+                Built-in role (badge & fallback)
               </label>
               <select
                 id="role"
@@ -150,21 +171,35 @@ export default function CreateUserModal({ isOpen, onClose, onCreateUser, isLoadi
               </select>
             </div>
 
-            <div className="flex gap-2 pt-4">
-              <Button
-                type="submit"
-                className="flex-1"
+            <div className="space-y-2">
+              <label htmlFor="customRoleId" className="text-sm font-medium text-white">
+                Custom permission profile (optional)
+              </label>
+              <select
+                id="customRoleId"
+                name="customRoleId"
+                value={formData.customRoleId}
+                onChange={handleChange}
                 disabled={isLoading}
+                className="w-full rounded-md border border-primary/30 bg-card px-3 py-2 text-sm text-white"
               >
+                <option value="">None — use built-in preset above</option>
+                {customRoles.map((cr) => (
+                  <option key={cr.id} value={cr.id}>
+                    {cr.name}
+                  </option>
+                ))}
+              </select>
+              <p className="text-xs text-white/50">
+                When set, LMS permissions follow the custom role. Create profiles under Admin → Roles.
+              </p>
+            </div>
+
+            <div className="flex gap-2 pt-4">
+              <Button type="submit" className="flex-1" disabled={isLoading}>
                 {isLoading ? "Creating..." : "Create User"}
               </Button>
-              <Button
-                type="button"
-                variant="outline"
-                className="flex-1"
-                onClick={onClose}
-                disabled={isLoading}
-              >
+              <Button type="button" variant="outline" className="flex-1" onClick={onClose} disabled={isLoading}>
                 Cancel
               </Button>
             </div>

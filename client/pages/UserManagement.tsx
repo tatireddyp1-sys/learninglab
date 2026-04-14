@@ -1,5 +1,7 @@
 import React, { useState, useMemo } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { useCustomRoles } from "@/context/CustomRolesContext";
+import { usePermissions } from "@/hooks/usePermissions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -7,9 +9,12 @@ import RoleBadge from "@/components/ui/RoleBadge";
 import CreateUserModal from "@/components/admin/CreateUserModal";
 import { AlertCircle, Plus, Trash2, Save, Search } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import type { UserRole } from "@/context/AuthContext";
 
 export default function UserManagement() {
-  const { user, getAllUsers, createUser, updateUser, deleteUser, hasRole } = useAuth();
+  const { user, getAllUsers, createUser, updateUser, deleteUser } = useAuth();
+  const { roles: customRoles } = useCustomRoles();
+  const { canAccessAdminNav } = usePermissions();
   const [users, setUsers] = useState(getAllUsers());
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -18,8 +23,7 @@ export default function UserManagement() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingData, setEditingData] = useState<Record<string, any>>({});
 
-  // If not admin, show access denied
-  if (!hasRole("admin")) {
+  if (!canAccessAdminNav()) {
     return (
       <div className="container py-12">
         <Alert variant="destructive">
@@ -37,11 +41,17 @@ export default function UserManagement() {
     });
   }, [users, searchQuery]);
 
-  const handleCreateUser = async (email: string, password: string, name: string, role) => {
+  const handleCreateUser = async (
+    email: string,
+    password: string,
+    name: string,
+    role: UserRole,
+    customRoleId?: string | null
+  ) => {
     setIsLoading(true);
     setError("");
     try {
-      await createUser(email, password, name, role);
+      await createUser(email, password, name, role, customRoleId);
       setUsers(getAllUsers());
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create user");
@@ -137,7 +147,7 @@ export default function UserManagement() {
                 <tr className="border-b border-primary/30 bg-primary/5">
                   <th className="px-6 py-4 text-left text-sm font-semibold text-white">Name</th>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-white">Email</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-white">Role</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-white">Role / profile</th>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-white">Status</th>
                   <th className="px-6 py-4 text-right text-sm font-semibold text-white">Actions</th>
                 </tr>
@@ -154,19 +164,42 @@ export default function UserManagement() {
                     <tr key={u.id} className="border-b border-primary/10 hover:bg-primary/5 transition-colors">
                       <td className="px-6 py-4 text-sm text-white">{u.name}</td>
                       <td className="px-6 py-4 text-sm text-white/80">{u.email}</td>
-                      <td className="px-6 py-4">
+                      <td className="px-6 py-4 space-y-2">
                         {editingId === u.id ? (
-                          <select
-                            value={editingData[u.id]?.role || u.role}
-                            onChange={(e) => updateEditingField(u.id, "role", e.target.value)}
-                            className="rounded-md border border-primary/30 bg-card px-2 py-1 text-xs text-white"
-                          >
-                            <option value="student">Student</option>
-                            <option value="teacher">Teacher</option>
-                            <option value="admin">Admin</option>
-                          </select>
+                          <>
+                            <select
+                              value={editingData[u.id]?.role ?? u.role}
+                              onChange={(e) => updateEditingField(u.id, "role", e.target.value as UserRole)}
+                              className="rounded-md border border-primary/30 bg-card px-2 py-1 text-xs text-white w-full max-w-[140px]"
+                            >
+                              <option value="student">Student</option>
+                              <option value="teacher">Teacher</option>
+                              <option value="admin">Admin</option>
+                            </select>
+                            <select
+                              value={(editingData[u.id]?.customRoleId ?? u.customRoleId) || ""}
+                              onChange={(e) =>
+                                updateEditingField(u.id, "customRoleId", e.target.value ? e.target.value : null)
+                              }
+                              className="rounded-md border border-primary/30 bg-card px-2 py-1 text-xs text-white w-full max-w-[200px]"
+                            >
+                              <option value="">Built-in preset only</option>
+                              {customRoles.map((cr) => (
+                                <option key={cr.id} value={cr.id}>
+                                  {cr.name}
+                                </option>
+                              ))}
+                            </select>
+                          </>
                         ) : (
-                          <RoleBadge role={u.role} size="sm" />
+                          <div>
+                            <RoleBadge role={u.role} size="sm" />
+                            {u.customRoleId && (
+                              <div className="text-[10px] text-white/50 mt-1 max-w-[180px] truncate">
+                                {customRoles.find((c) => c.id === u.customRoleId)?.name ?? u.customRoleId}
+                              </div>
+                            )}
+                          </div>
                         )}
                       </td>
                       <td className="px-6 py-4">
@@ -251,6 +284,7 @@ export default function UserManagement() {
         isOpen={showCreateModal}
         onClose={() => setShowCreateModal(false)}
         onCreateUser={handleCreateUser}
+        customRoles={customRoles}
         isLoading={isLoading}
       />
     </div>

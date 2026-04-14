@@ -10,3 +10,13 @@
 export interface DemoResponse {
   message: string;
 }
+
+export type {
+  Course,
+  CustomRole,
+  Lesson,
+  LessonBlock,
+  Enrollment,
+  LessonCompletion,
+  LmsPermission,
+} from "./lms";

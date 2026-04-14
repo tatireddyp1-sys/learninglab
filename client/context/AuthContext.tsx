@@ -8,6 +8,8 @@ export interface User {
   email: string;
   name: string;
   role: UserRole;
+  /** When set, effective LMS permissions come from this custom role instead of the built-in preset for `role`. */
+  customRoleId?: string | null;
   isActive: boolean;
   createdAt?: string;
 }
@@ -36,9 +38,17 @@ interface AuthContextType {
   logout: () => void;
   hasRole: (role: UserRole | UserRole[]) => boolean;
   getAllUsers: () => User[];
-  createUser: (email: string, password: string, name: string, role: UserRole) => Promise<void>;
+  createUser: (
+    email: string,
+    password: string,
+    name: string,
+    role: UserRole,
+    customRoleId?: string | null
+  ) => Promise<void>;
   updateUser: (userId: string, updates: Partial<User>) => Promise<void>;
   deleteUser: (userId: string) => Promise<void>;
+  /** Remove a custom role id from all users (e.g. when the role is deleted). */
+  stripCustomRoleFromUsers: (customRoleId: string) => void;
   getAuditLogs: () => AuditLog[];
   logAction: (action: string, targetUserId?: string, details?: Record<string, any>) => void;
 }
@@ -180,7 +190,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return users.map(({ password, ...userWithoutPassword }) => userWithoutPassword);
   };
 
-  const createUser = async (email: string, password: string, name: string, role: UserRole) => {
+  const createUser = async (
+    email: string,
+    password: string,
+    name: string,
+    role: UserRole,
+    customRoleId?: string | null
+  ) => {
     if (!hasRole("admin")) {
       throw new Error("Only admins can create users");
     }
@@ -195,6 +211,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       email,
       name,
       role,
+      customRoleId: customRoleId ?? undefined,
       isActive: true,
       password,
       createdAt: new Date().toISOString(),
@@ -247,6 +264,19 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     logAction("delete_user", userId, { userName: userToDelete?.name });
   };
 
+  const stripCustomRoleFromUsers = (customRoleId: string) => {
+    const users = JSON.parse(localStorage.getItem("auth_users") || "[]") as StoredUser[];
+    const next = users.map((u) =>
+      u.customRoleId === customRoleId ? { ...u, customRoleId: undefined } : u
+    );
+    localStorage.setItem("auth_users", JSON.stringify(next));
+    if (user?.customRoleId === customRoleId) {
+      const updated = { ...user, customRoleId: undefined };
+      setUser(updated);
+      localStorage.setItem("auth_user", JSON.stringify(updated));
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -261,6 +291,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         createUser,
         updateUser,
         deleteUser,
+        stripCustomRoleFromUsers,
         getAuditLogs,
         logAction,
       }}
