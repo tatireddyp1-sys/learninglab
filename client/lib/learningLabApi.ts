@@ -16,8 +16,6 @@
  * - `VITE_LMS_API_MOCK_AUTH_ADMIN=true` forces mock for auth + admin even when the base URL is set.
  * - `VITE_LMS_API_MOCK_COURSES_LESSONS=true` forces mock for courses + lessons only.
  * - `VITE_LMS_API_MOCK_ENROLLMENTS=true` forces mock for enrollments only.
- * - `VITE_LMS_LESSONS_ACCESS_TOKEN` (optional): when set, `POST …/lessons` uses this Bearer token
- *   instead of the signed-in user's token. Other modules still use `learninglab_access_token`.
  *
  * Live HTTP: on **401** only (e.g. expired bearer), if a refresh token is stored, calls `POST …/auth`
  * `{ action: "refresh", refreshToken }`, updates the global access token, then retries the original request once.
@@ -109,24 +107,13 @@ function useLiveHttpFor(module: LearningLabModule): boolean {
   return true;
 }
 
-/** When non-empty, overrides the session token for the `lessons` module only (live HTTP). */
-function readLessonsOnlyAccessToken(): string | null {
-  const raw = import.meta.env.VITE_LMS_LESSONS_ACCESS_TOKEN as string | undefined;
-  if (raw && String(raw).trim()) return String(raw).trim();
-  return null;
-}
-
 export type PostModuleOpts = {
   accessToken?: string | null;
   /** @internal skip 401 → refresh → retry (used after one refresh attempt). */
   __skipTokenRefresh?: boolean;
 };
 
-function resolveBearerToken(module: LearningLabModule, opts?: PostModuleOpts): string | null {
-  if (module === "lessons") {
-    const dedicated = readLessonsOnlyAccessToken();
-    if (dedicated) return dedicated;
-  }
+function resolveBearerToken(opts?: PostModuleOpts): string | null {
   return opts?.accessToken ?? sessionTokens.getAccessToken();
 }
 
@@ -213,7 +200,7 @@ async function fetchPostModule<ActionReq extends { action: string }, ResData>(
   body: ActionReq,
   opts?: PostModuleOpts
 ): Promise<{ status: number; envelope: LearningLabEnvelope<ResData> }> {
-  const token = resolveBearerToken(module, opts);
+  const token = resolveBearerToken(opts);
   const url = joinBaseAndModule(baseUrl, module);
   const res = await fetch(url, {
     method: "POST",
@@ -311,7 +298,6 @@ function shouldAttemptTokenRefresh(
   if (opts?.__skipTokenRefresh) return false;
   if (module === "auth") return false;
   if (body.action === "refresh") return false;
-  if (readLessonsOnlyAccessToken() && module === "lessons") return false;
   if (!sessionTokens.getRefreshToken()) return false;
   return status === 401;
 }
