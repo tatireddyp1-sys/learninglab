@@ -1,7 +1,9 @@
 import { Link } from "react-router-dom";
 import Logo from "@/components/ui/Logo";
+import { useAuth } from "@/context/AuthContext";
 
 export default function Footer() {
+  const { user } = useAuth();
   return (
     <footer className="border-t">
       <div className="container py-10 grid gap-6 md:grid-cols-3">
@@ -19,7 +21,9 @@ export default function Footer() {
           <h3 className="text-sm font-semibold mb-2">Explore</h3>
           <ul className="space-y-1 text-sm">
             <li><Link to="/lessons" className="hover:underline">Browse Lessons</Link></li>
-            <li><Link to="/contribute" className="hover:underline">Contribute</Link></li>
+            {(!user || user.role === "student") && (
+              <li><Link to="/contribute" className="hover:underline">Contribute</Link></li>
+            )}
           </ul>
         </div>
         <div>

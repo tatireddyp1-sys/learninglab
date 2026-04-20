@@ -31,7 +31,9 @@ export function usePermissions() {
       canAccessAdminNav: () => canAccessAdminNav(user, customRoles),
       showLessonBuilderNav: () =>
         user
-          ? can(user, customRoles, "lesson:create", {}) || can(user, customRoles, "course:create", {})
+          ? canCreateCourse(user, customRoles) ||
+            can(user, customRoles, "lesson:create", {}) ||
+            can(user, customRoles, "course:create", {})
           : false,
       showEnrollmentsNav: () => (user ? can(user, customRoles, "enrollment:manage", {}) : false),
       customRoles,

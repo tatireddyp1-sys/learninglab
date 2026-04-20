@@ -16,11 +16,9 @@ import Layout from "@/components/layout/Layout";
 import Lessons from "./pages/Lessons";
 import Contribute from "./pages/Contribute";
 import LessonViewer from "./pages/LessonViewer";
-import SignUp from "./pages/SignUp";
 import Login from "./pages/Login";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import UserManagement from "./pages/UserManagement";
-import AuditLogs from "./pages/AuditLogs";
 import LessonUpload from "./pages/LessonUpload";
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const CourseListPage = lazy(() => import("./pages/CourseListPage"));
@@ -49,7 +47,7 @@ const App = () => (
           <Sonner />
           <BrowserRouter>
             <Routes>
-                <Route path="/signup" element={<SignUp />} />
+                <Route path="/signup" element={<Navigate to="/login" replace />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/session-expired" element={<SessionExpired />} />
                 <Route
@@ -71,6 +69,8 @@ const App = () => (
                   <Route path="/lesson-builder" element={<LessonBuilderHubPage />} />
                   <Route path="/my-courses" element={<MyCoursesPage />} />
                   <Route path="/lessons" element={<Lessons />} />
+                  <Route path="/lessons/new" element={<LessonBuilderPage />} />
+                  <Route path="/lessons/:lessonId/edit" element={<LessonBuilderPage />} />
                   <Route path="/contribute" element={<Contribute />} />
                   <Route path="/lessons/upload" element={<LessonUpload />} />
                   <Route path="/viewer" element={<LessonViewer />} />
@@ -78,8 +78,6 @@ const App = () => (
                   <Route path="/progress" element={<ProgressDashboardPage />} />
                   <Route path="/admin/users" element={<UserManagement />} />
                   <Route path="/admin/roles" element={<RolesPage />} />
-                  <Route path="/admin/audit" element={<Navigate to="/admin/audit-logs" replace />} />
-                  <Route path="/admin/audit-logs" element={<AuditLogs />} />
                   <Route path="/profile" element={<ProfilePage />} />
                 </Route>
                 <Route path="*" element={<NotFound />} />

@@ -1,5 +1,5 @@
 /** @import must precede all other statements */
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Roboto:wght@400;500;600&display=swap");
 
 @tailwind base;
 @tailwind components;
@@ -21,7 +21,7 @@
     --popover: 0 0% 100%;
     --popover-foreground: 220 30% 12%;
 
-    --primary: 186 100% 48%;
+    --primary: 221 83% 53%;
     --primary-foreground: 0 0% 100%;
 
     --secondary: 220 30% 25%;
@@ -38,13 +38,13 @@
 
     --border: 220 30% 25%;
     --input: 220 30% 25%;
-    --ring: 186 100% 48%;
+    --ring: 221 83% 53%;
 
     --radius: 0.75rem;
 
     --sidebar-background: 220 30% 15%;
     --sidebar-foreground: 210 50% 95%;
-    --sidebar-primary: 186 100% 48%;
+    --sidebar-primary: 221 83% 53%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 220 30% 25%;
     --sidebar-accent-foreground: 210 50% 95%;
@@ -62,7 +62,7 @@
     --popover: 220 30% 18%;
     --popover-foreground: 210 50% 95%;
 
-    --primary: 186 100% 48%;
+    --primary: 221 83% 53%;
     --primary-foreground: 0 0% 100%;
 
     --secondary: 220 30% 28%;
@@ -79,11 +79,11 @@
 
     --border: 220 30% 28%;
     --input: 220 30% 28%;
-    --ring: 155 87% 44%;
+    --ring: 221 83% 53%;
 
     --sidebar-background: 220 30% 18%;
     --sidebar-foreground: 210 50% 95%;
-    --sidebar-primary: 186 100% 48%;
+    --sidebar-primary: 221 83% 53%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 220 30% 28%;
     --sidebar-accent-foreground: 210 50% 95%;

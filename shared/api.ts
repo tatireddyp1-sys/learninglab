@@ -16,7 +16,15 @@ export type {
   CustomRole,
   Lesson,
   LessonBlock,
+  LessonBlockType,
+  ApiBlockType,
   Enrollment,
   LessonCompletion,
   LmsPermission,
+} from "./lms";
+
+export {
+  toApiBlockType,
+  fromApiBlockType,
+  mapApiBlock,
 } from "./lms";

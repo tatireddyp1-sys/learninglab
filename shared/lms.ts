@@ -5,11 +5,14 @@
 
 export type UserRole = "admin" | "teacher" | "student";
 
-export type CourseStatus = "draft" | "published";
+export type CourseStatus = "draft" | "published" | "archived" | "deleted";
 
-export type EnrollmentStatus = "active" | "completed" | "dropped";
+export type EnrollmentStatus = "active" | "completed" | "dropped" | "suspended";
 
-export type LessonBlockType = "video" | "pdf" | "text" | "quiz" | "download";
+export type LessonBlockType = "video" | "pdf" | "text" | "quiz" | "download" | "image";
+
+/** Uppercase API block type names used by the backend */
+export type ApiBlockType = "TEXT" | "VIDEO" | "QUIZ" | "DOCUMENT" | "IMAGE";
 
 export interface LessonBlock {
   id: string;
@@ -17,10 +20,59 @@ export interface LessonBlock {
   title?: string;
   /** Plain text or markdown for text blocks */
   body?: string;
-  /** Asset URL after upload (client may use blob: for demo) */
+  /** QUIZ: structured payload from API (`quizData`) — used for authoring + grading UI */
+  quizData?: unknown;
+  /** Asset URL after upload */
   assetUrl?: string;
   fileName?: string;
+  /** Set after getUploadUrl / API — sent on addBlock/updateBlock for media */
+  s3Bucket?: string;
+  s3Key?: string;
   order: number;
+}
+
+export function toApiBlockType(t: LessonBlockType): ApiBlockType {
+  const map: Record<LessonBlockType, ApiBlockType> = {
+    text: "TEXT",
+    video: "VIDEO",
+    pdf: "DOCUMENT",
+    quiz: "QUIZ",
+    download: "DOCUMENT",
+    image: "IMAGE",
+  };
+  return map[t] ?? "TEXT";
+}
+
+export function fromApiBlockType(t: string): LessonBlockType {
+  const upper = t.toUpperCase();
+  if (upper === "TEXT") return "text";
+  if (upper === "VIDEO") return "video";
+  if (upper === "DOCUMENT") return "pdf";
+  if (upper === "QUIZ") return "quiz";
+  if (upper === "IMAGE") return "image";
+  return "text";
+}
+
+export function mapApiBlock(b: any): LessonBlock {
+  let type = fromApiBlockType(String(b.type ?? "TEXT"));
+  if (type === "pdf" && b.fileName) {
+    const ext = (b.fileName as string).split(".").pop()?.toLowerCase() ?? "";
+    if (ext !== "pdf") type = "download";
+  }
+  const body = b.textData ?? b.body ?? undefined;
+  const quizData = b.quizData !== undefined && b.quizData !== null ? b.quizData : undefined;
+  return {
+    id: String(b.blockId ?? b.id ?? ""),
+    type,
+    title: b.title ?? undefined,
+    body: body != null ? String(body) : undefined,
+    quizData,
+    assetUrl: b.assetUrl ?? undefined,
+    fileName: b.fileName ?? undefined,
+    s3Bucket: b.s3Bucket != null ? String(b.s3Bucket) : undefined,
+    s3Key: b.s3Key != null ? String(b.s3Key) : undefined,
+    order: Number(b.order ?? 0),
+  };
 }
 
 export interface Lesson {
@@ -29,10 +81,16 @@ export interface Lesson {
   title: string;
   description: string;
   blocks: LessonBlock[];
+  /** 1-based order from API listLessons when course lessonOrder is unavailable */
+  lessonOrder?: number;
   /** Sequential lock: lesson N+1 locked until N complete */
   sequential: boolean;
+  /** Server-side lock (e.g. sequential gating) from listLessons/getLesson */
+  locked?: boolean;
   /** Soft delete for viewer */
   deleted?: boolean;
+  /** Lesson author (for ownership checks when API provides it) */
+  createdBy?: string;
   createdAt: string;
   updatedAt: string;
   updatedBy?: string;
@@ -46,6 +104,22 @@ export interface LessonVersionSnapshot {
   lesson: Omit<Lesson, "version"> & { version: number };
 }
 
+/** `submitQuiz` action — success payload (subset used by UI) */
+export interface LessonQuizSubmitResult {
+  scorePercent: number;
+  passed: boolean;
+  correctCount: number;
+  totalQuestions: number;
+  results: Array<{
+    questionId: string;
+    question?: string;
+    submittedAnswer: unknown;
+    correctAnswer: unknown;
+    isCorrect: boolean;
+  }>;
+  progress?: Record<string, unknown> | null;
+}
+
 export interface Course {
   id: string;
   title: string;
@@ -53,6 +127,8 @@ export interface Course {
   status: CourseStatus;
   createdBy: string;
   createdByName?: string;
+  /** Co-teachers from API (`assignTeacher`); used for visibility and enrollment roster access */
+  teacherIds?: string[];
   createdAt: string;
   updatedAt: string;
   updatedBy?: string;
@@ -78,6 +154,8 @@ export interface LessonCompletion {
   completed: boolean;
   completedAt?: string;
   lastActivityAt: string;
+  /** 0–100 from PROGRESS API (`trackProgress` / row sync). */
+  progressPercent?: number;
 }
 
 export type LmsPermission =
@@ -97,6 +175,7 @@ export type LmsPermission =
   | "progress:view_own"
   | "progress:view_course"
   | "admin:users"
+  | "admin:roles"
   | "admin:audit";
 
 /** User-defined role with an explicit permission set (stored client-side in demo). */
