@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import Logo from "@/components/ui/Logo";
+import { useAuth } from "@/context/AuthContext";
 
 type GradeBand = "K-2" | "3-5" | "6-8" | "9-12";
 
@@ -115,6 +116,7 @@ const CARD_BACKGROUNDS: Record<string, string> = {
 
 export default function Index() {
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
   const [query, setQuery] = useState("");
   const [band, setBand] = useState<GradeBand | "all">("all");
   const [topic, setTopic] = useState<string | "all">("all");
@@ -143,6 +145,16 @@ export default function Index() {
 
   return (
     <div className="container py-12">
+      {isAuthenticated && (
+        <div className="mb-6 rounded-lg border border-primary/20 bg-primary/5 px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+          <p className="text-sm text-muted-foreground">
+            You are signed in. Open the LMS dashboard for courses, lessons, and progress.
+          </p>
+          <Button variant="secondary" size="sm" asChild>
+            <Link to="/dashboard">Go to dashboard</Link>
+          </Button>
+        </div>
+      )}
       {/* New layout: compact hero + two-column content (main + sidebar) */}
       <header className="grid gap-6 md:grid-cols-3 md:items-center mb-8">
         <div className="flex items-center gap-4 md:col-span-2">

@@ -21,7 +21,7 @@ export default function Header() {
 
   const handleLogout = () => {
     logout();
-    navigate("/signup");
+    navigate("/login");
   };
 
   return (
@@ -49,20 +49,17 @@ export default function Header() {
             </NavLink>
           )}
           {user?.role === "admin" && (
-            <>
-              <NavLink to="/admin/users" className={navLinkClass}>
-                Users
-              </NavLink>
-              <NavLink to="/admin/audit-logs" className={navLinkClass}>
-                Audit Logs
-              </NavLink>
-            </>
+            <NavLink to="/admin/users" className={navLinkClass}>
+              Users
+            </NavLink>
           )}
         </nav>
         <div className="flex items-center gap-2">
-          <Button asChild variant="secondary" className="hidden sm:inline-flex">
-            <Link to="/contribute">Share a Lesson</Link>
-          </Button>
+          {user?.role === "student" && (
+            <Button asChild variant="secondary" className="hidden sm:inline-flex">
+              <Link to="/contribute">Share a Lesson</Link>
+            </Button>
+          )}
           {user && (
             <div className="hidden sm:flex items-center gap-2">
               <span className="text-sm text-muted-foreground flex items-center gap-2">

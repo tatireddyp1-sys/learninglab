@@ -129,7 +129,7 @@ export default function MFAScreen({ email, onVerify, onCancel, isLoading = false
             </Button>
 
             <p className="text-center text-xs text-white/60">
-              Don't have a code? Check your authenticator app or email
+              Enter the 6-digit code from your authenticator app.
             </p>
           </form>
         </CardContent>

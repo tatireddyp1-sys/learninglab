@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,14 +16,24 @@ interface LessonFile {
 
 export default function LessonUpload() {
   const { user, hasRole } = useAuth();
-  const [lessons, setLessons] = useState<LessonFile[]>(
-    JSON.parse(localStorage.getItem(`teacher_lessons_${user?.id}`) || "[]")
-  );
+  const [lessons, setLessons] = useState<LessonFile[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState("");
   const [formData, setFormData] = useState({ title: "", file: null as File | null });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState("");
+
+  useEffect(() => {
+    if (!user?.id) {
+      setLessons([]);
+      return;
+    }
+    try {
+      setLessons(JSON.parse(localStorage.getItem(`teacher_lessons_${user.id}`) || "[]"));
+    } catch {
+      setLessons([]);
+    }
+  }, [user?.id]);
 
   // If not teacher, show access denied
   if (!hasRole(["teacher", "admin"])) {
@@ -39,7 +49,9 @@ export default function LessonUpload() {
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file && file.type === "application/pdf") {
+    const nameOk = file && file.name.toLowerCase().endsWith(".pdf");
+    const typeOk = file && (file.type === "application/pdf" || file.type === "");
+    if (file && nameOk && typeOk) {
       setFormData((prev) => ({ ...prev, file }));
       setError("");
     } else {
@@ -56,6 +68,10 @@ export default function LessonUpload() {
     }
     if (!formData.file) {
       setError("Please select a PDF file");
+      return;
+    }
+    if (!user?.id) {
+      setError("You must be signed in to upload");
       return;
     }
 
