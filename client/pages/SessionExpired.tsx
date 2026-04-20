@@ -18,7 +18,7 @@ export default function SessionExpired() {
         </CardHeader>
         <CardContent>
           <Button asChild>
-            <Link to="/login">Sign in</Link>
+            <Link to="/">Sign in</Link>
           </Button>
         </CardContent>
       </Card>

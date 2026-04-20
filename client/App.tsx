@@ -6,8 +6,8 @@ import { createRoot } from "react-dom/client";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { AuthProvider } from "@/context/AuthContext";
+import { BrowserRouter, Routes, Route, Navigate, Outlet, useLocation } from "react-router-dom";
+import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { CustomRolesProvider } from "@/context/CustomRolesContext";
 import { ProgressProvider } from "@/context/ProgressContext";
 import Index from "./pages/Index";
@@ -37,6 +37,32 @@ const SessionExpired = lazy(() => import("./pages/SessionExpired"));
 
 const queryClient = new QueryClient();
 
+/** Unauthenticated users see login at `/`; deep links redirect to `/` with return state. */
+function RootGate() {
+  const { isAuthenticated, isLoading } = useAuth();
+  const location = useLocation();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    if (location.pathname === "/") {
+      return <Login />;
+    }
+    return <Navigate to="/" replace state={{ from: location }} />;
+  }
+
+  return <Outlet />;
+}
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
@@ -47,16 +73,17 @@ const App = () => (
           <Sonner />
           <BrowserRouter>
             <Routes>
-                <Route path="/signup" element={<Navigate to="/login" replace />} />
-                <Route path="/login" element={<Login />} />
+                <Route path="/signup" element={<Navigate to="/" replace />} />
+                <Route path="/login" element={<Navigate to="/" replace />} />
                 <Route path="/session-expired" element={<SessionExpired />} />
-                <Route
-                  element={
-                    <ProtectedRoute>
-                      <Layout />
-                    </ProtectedRoute>
-                  }
-                >
+                <Route element={<RootGate />}>
+                  <Route
+                    element={
+                      <ProtectedRoute>
+                        <Layout />
+                      </ProtectedRoute>
+                    }
+                  >
                   <Route path="/" element={<Index />} />
                   <Route path="/dashboard" element={<Dashboard />} />
                   <Route path="/courses" element={<CourseListPage />} />
@@ -79,6 +106,7 @@ const App = () => (
                   <Route path="/admin/users" element={<UserManagement />} />
                   <Route path="/admin/roles" element={<RolesPage />} />
                   <Route path="/profile" element={<ProfilePage />} />
+                  </Route>
                 </Route>
                 <Route path="*" element={<NotFound />} />
               </Routes>

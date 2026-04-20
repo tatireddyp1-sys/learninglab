@@ -26,7 +26,7 @@ export default function TopBar() {
             className="gap-1"
             onClick={() => {
               logout();
-              navigate("/login");
+              navigate("/");
             }}
           >
             <LogOut className="h-4 w-4" />
